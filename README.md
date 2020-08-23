@@ -1,2 +1,2 @@
-# public-gamesense
-All of my public gamesense lua's
+# public-gamesense luas
+All of my public gamesense luas
