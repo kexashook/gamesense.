@@ -1,0 +1,484 @@
+local function includes(table, key)
+    for i=1, #table do
+        if table[i] == key then
+            return true, i
+        end
+    end
+    return false, nil
+end
+
+local lp = entity.get_local_player
+local screen = {client.screen_size()}
+local center = {screen[1]*0.5, screen[2]*0.5}
+
+--1: ID, 2: NAME, 3: MAP, 4: NADES, 5: RELEASE_MODE 5: JUMP, 7: Duck, 8: RUN_TIME, 9: ORIGIN, 10: END_ORIGIN, 11: ANGLE, 12: INDICATOR_ALPHA , 13: INDICATOR_ALPHA_2
+local spots = { 
+    {1, 'Stairs', 'de_mirage', {48, 46}, true, true, false, 12, {1003, -1220, -108}, {544, -1336, -52}, {6, -165}, 0, 0},
+    {2, 'Sandvich', 'de_mirage', {48, 46}, true, false, false, 0, {832, -1255, -108}, {544, -1332, 61}, {-19, -165}, 0, 0},
+    {3, 'Sandvich', 'de_mirage', {48, 46}, true, false, false, 0, {563, -1543, -263}, {-2303, -1580, 968}, {-22, -179}, 0, 0},
+    {4, 'Ticket box (Crouch)', 'de_mirage', {48, 46}, true, true, true, 0, {-31, -1418, -167}, {-47, -1436, -122}, {0, -131}, 0, 0},
+    {5, 'Ticket box', 'de_mirage', {48, 46}, true, false, false, 10, {87, -2159, -35}, {-854, -2227, 13}, {3.906809814445, -176.08407616858}, 0, 0},
+    {6, 'Apps', 'de_mirage', {48, 46}, true, false, false, 0, {-2415, -135, -157}, {-1839, 463, 251}, {-22, 46}, 0, 0},
+    {7, 'Jungle', 'de_mirage', {48, 46}, true, false, false, 0, {-1026.134399, -297.443237, -367.968750}, {-1178.556239, -1043.903259, 175.160689}, {-32.165459, -101.540741}, 0, 0},
+    {8, 'A site', 'de_mirage', {48, 46}, true, false, false, 20, {482.310547, -1577.716675, -253.120834}, {-387.225553, -1639.421424, 34.708329}, {-14.400543, -175.940933}, 0, 0},
+    {9, 'Chair', 'de_mirage', {48, 46}, true, false, false, 2, {-1047.799805, 285.309052, -159.968750}, {-566.875258, -452.076662, 89.152808}, {-14.360016, -57.237240}, 0, 0},
+    {10, 'Tunnel stairs', 'de_mirage', {48, 46}, true, false, false, 0, {-37.588894, 809.846863, -135.968750}, {-850.520077, 505.312474, 165.521665}, {-15.300308, -159.463409}, 0, 0},
+    {11, 'T Roof', 'de_mirage', {48, 46}, true, false, false, 0, {-436.222595, -1528.081665, -39.968750}, {421.615024, -1566.521907, 293.543713}, {-17.425070, -2.565743}, 0, 0},
+    {12, 'Palace interior', 'de_mirage', {48, 46}, true, false, false, 12, {-751.278809, -1180.264648, -167.968750}, {-230.510860, -1847.550801, 201.857891}, {-19.865139, -52.030571}, 0, 0},
+    {13, 'Barrels', 'de_overpass', {48, 46}, true, false, false, 5, {-1592.376465, -617.345337, 136.031250}, {-1097.797591, 107.131330, 401.340206}, {-12.925071, 55.679798}, 0, 0},
+    {14, 'A Default', 'de_mirage', {48, 46}, true, false, false, 0, {-1548.075439, -2407.754395, -240.026031}, {-753.252376, -2218.833452, 201.552006}, {-24.804991, 13.370485}, 0, 0},
+    {15, 'A Default', 'de_mirage', {48, 46}, true, false, false, 5, {16.034428, -2224.390869, -39.968750}, {873.907900, -2001.773753, 179.624210}, {-7.039933, 14.584919}, 0, 0},
+    {16, 'Ticket box', 'de_mirage', {48, 46}, true, false, false, 30, {-608.029114, -1033.196045, -215.367828}, {-745.192166, -1899.001795, 51.347638}, {-19.240187, -99.003212}, 0, 0},
+    {17, 'Ticket box', 'de_mirage', {48, 46}, true, false, false, 10, {-132.849808, -2396.075928, -163.971832}, {-993.976483, -2165.146500, 23.887379}, {-12.585137, 165.129501}, 0, 0},
+    {18, 'T Roof', 'de_mirage', {48, 46}, true, true, false, 30, {-17.271296, -1928.493164, -39.968750}, {223.087051, -1065.907196, 114.437632}, {1, 74.429581}, 0, 0},
+}
+
+
+--Current grenade info
+local grenade = {
+    id = nil,
+    run = nil,
+    thrown_at = nil,
+}
+
+local function remove_grenade()
+    grenade.id = nil
+    grenade.run = nil
+    grenade.thrown_at = nil
+end
+
+local autostrafer = ui.reference("Misc", "Movement", "Air strafe")
+
+
+local function clamp(min, max, value)
+    if min < max then
+        return math.max(min, math.min(max, value))
+    else
+        return math.max(max, math.min(min, value))
+    end
+end
+
+local function normalize_yaw( angle )
+    angle = (angle % 360 + 360) % 360
+    return angle > 180 and angle - 360 or angle
+end
+
+local function calculate_angle(x, y, ex, ey)
+    local delta = {x - ex, y - ey}
+    local yaw = math.atan(delta[2] / delta[1])
+    yaw = normalize_yaw(yaw * (180 / math.pi))
+    if delta[1] >= 0 then
+        yaw = normalize_yaw(yaw + 180)
+    end
+    return yaw
+end
+
+local function rotate_point(cx, cy, angle, distance)
+    angle = math.rad(angle or 0)
+    distance = distance or 0
+
+    local x = math.sin(angle) * (distance * 2)
+    local y = math.cos(angle) * distance
+
+    x = cx - x
+    y = cy - y
+
+    return x, y
+end
+
+local function vec3_angles(source, destination)
+    local vec3_delta = {
+        source[1] - destination[1],
+        source[2] - destination[2],
+        source[3] - destination[3],
+    }
+
+    local distances = math.sqrt(vec3_delta[1] * vec3_delta[1] + vec3_delta[2] * vec3_delta[2])
+
+    local angle_pitch = math.atan(vec3_delta[2]/distances) * (180/math.pi)
+    local angle_yaw = math.atan(vec3_delta[2]/vec3_delta[1]) * (180/math.pi)
+
+    if vec3_delta[1] > 0 then
+        angle_yaw = angle_yaw + 180
+    end
+
+    return {angle_pitch, angle_yaw}
+end
+
+local function angle_forward(angle)
+    if angle[1] ~= nil and angle[2] ~= nil then
+        angle[1] = math.rad(angle[1])
+        angle[2] = math.rad(angle[2])
+
+        local sin_pitch = math.sin(angle[1])
+        local sin_yaw = math.sin(angle[2])
+        local cos_pitch = math.cos(angle[1])
+        local cos_yaw = math.cos(angle[2])
+
+        return {cos_pitch * cos_yaw, cos_pitch * sin_yaw, -sin_pitch}
+    end
+end
+
+local function calculate_movement(angle, view, movement)
+    local delta = angle - view
+    --Air check
+    local air = bit.band(entity.get_prop(lp(), "m_fFlags"), 1) == 0
+    if air then
+        return {nil, nil}
+    end
+    
+    delta_view = normalize_yaw(view - angle)
+    
+    local forward = math.cos(math.rad(delta_view)) * movement[1] + math.cos(math.rad(delta_view + 90)) * movement[2]
+    local sidemove = math.sin(math.rad(delta_view)) * movement[1] + math.sin(math.rad(delta_view + 90)) * movement[2]
+
+    return {forward, sidemove}
+end
+
+local function distance2d(source, destination)
+    local delta2d = {source[1] - destination[1], source[2] - destination[2]}
+    return math.sqrt(delta2d[1] * delta2d[1] + delta2d[2] * delta2d[2])
+end
+
+local function extrapolate_angle(angles)
+    local forward = angle_forward(angles)
+    local camera = {client.eye_position()}
+
+    return {
+        camera[1] + (forward[1] * (900)),
+        camera[2] + (forward[2] * (900)),
+        camera[3] + (forward[3] * (900))
+    }
+end
+
+local function distance_pitch(source, angle, distance)
+    local horz = math.abs(normalize_yaw(source[1] - angle[1])) < distance
+    local vert = math.abs(normalize_yaw(source[2] - angle[2])) < distance
+    return horz and vert
+end
+
+local function visible(lp, source, destination)
+    local trace = {client.trace_line(lp, source[1], source[2], source[3], destination[1], destination[2], destination[3])}
+    return trace[1] == 1
+end
+
+local function handle_throwing(cmd, id, run_time, throw_time)
+    local contains, position = false, nil
+
+    local origin = {entity.get_origin(lp())}
+    local camera_angle = {client.camera_angles()}
+    local weapon = entity.get_player_weapon(lp())
+
+    for i=1, #spots do
+        local spot = spots[i]
+        if spot[1] == id then
+            contains = true
+            position = i
+            break
+        end
+    end
+
+    if contains then
+        local spot = spots[position]
+        local release = true
+
+        if run_time ~= 0 then
+            local yaw = calculate_angle(origin[1], origin[2], spot[10][1], spot[10][2])
+            local move = calculate_movement(spot[11][2], camera_angle[2], {450, 0})
+            if move[1] ~= nil and move[2] ~= nil then
+                cmd.forwardmove = move[1]
+                cmd.sidemove = move[2]
+            end
+
+            --Fixed bug: on throw we could stop running because 
+            if run_time > globals.tickcount() then
+                --Still running dont want to release yet
+                release = false
+            end
+        end
+
+        if spot[6] then
+            if release then
+                --Invoke jump
+                cmd.in_jump = 1
+
+                local fall = entity.get_prop(lp(), "m_flFallVelocity")
+                
+                --Peek of our jump/fall
+                if (math.abs(fall) <= 125) then
+                    release = false
+                end
+            end
+        end
+
+        if spot[7] then
+            cmd.in_duck = 1
+        else
+            cmd.in_duck = 0
+        end
+
+        if release then
+            if throw_time == nil then
+                grenade.thrown_at = globals.tickcount() + 7
+            end
+
+            cmd.pitch = spot[11][1]
+            cmd.yaw = spot[11][2]
+
+            if spot[5] then
+                cmd.in_attack = 0
+            else
+                cmd.in_attack2 = 0
+            end
+        else
+            if spot[5] then
+                cmd.in_attack = 1
+            else
+                cmd.in_attack2 = 1
+            end
+        end
+        if spot[5] then
+            cmd.in_attack2 = 0
+        else
+            cmd.in_attack = 0
+        end
+    end
+end
+
+local function check_validity(position)
+    local spot = spots[position]
+    
+    local map = globals.mapname()
+    if spot[3] ~= map then
+        return false
+    end
+
+    local camera = {client.camera_position()}
+    if visible(lp(), camera, spot[9]) == false then
+        return false
+    end
+
+    local weapon = entity.get_player_weapon(lp())
+    if weapon == nil then
+        return false
+    end
+
+    local weapon_index = entity.get_prop(weapon, "m_iItemDefinitionIndex")
+    if weapon_index == nil then
+        return false
+    end
+
+    if includes(spot[4], weapon_index) == false then
+        return false
+    end
+
+    return true
+end
+
+local function is_trying_to_move(cmd)
+    if cmd.in_forward == 1 then
+        return true
+    end
+
+    if cmd.in_back == 1 then
+        return true
+    end
+
+    if cmd.in_moveleft == 1 then
+        return true
+    end
+
+    if cmd.in_moveright == 1 then
+        return true
+    end
+
+    if cmd.in_jump == 1 then
+        return true
+    end
+    
+    return false
+end
+
+local function get_speed(player)
+    local vecVel = {entity.get_prop(player, "m_vecVelocity")}
+	return math.sqrt(vecVel[1] * vecVel[1] + vecVel[2] * vecVel[2])
+end
+
+local function fade(current, increase, speed)
+    if increase then
+        return clamp(0, 255, current + (255 / speed)*globals.frametime())
+    else
+        return clamp(0, 255, current - (255 / speed)*globals.frametime())
+    end
+end
+
+local function setup_command(cmd)
+    local camera_angle = {client.camera_angles()}
+    local origin = {entity.get_origin(lp())}
+    local weapon = entity.get_player_weapon(lp())
+
+    if weapon ~= nil and grenade.id == nil then
+        local weapon_index = entity.get_prop(weapon, "m_iItemDefinitionIndex")
+        for i=1, #spots do
+            local spot = spots[i]
+            if check_validity(i) then
+                local distance = distance2d(origin, spot[9])
+                if distance < 0.75 then
+                    local speed = get_speed(lp()) or 0
+                    local near = distance_pitch(camera_angle, spot[11], 20)
+                    if speed < 4 and near then
+                        local pin_pulled = entity.get_prop(weapon, "m_bPinPulled") == 1
+                        if cmd.in_attack == 1 and pin_pulled and near then
+                            if grenade.id == nil then
+                                grenade.id = spot[1]
+                                grenade.run = spot[8] ~= 0 and globals.tickcount() + spot[8] or 0
+                            end
+                        end
+                    end
+                    if spot[13] < 255 and speed < 4 then
+                        spots[i][13] = fade(spots[i][13], true, 0.1)
+                    end
+                else
+                    if distance < 35 and not is_trying_to_move(cmd) then
+                        if math.abs(origin[3] - spot[9][3]) < 35 then
+                            local yaw = calculate_angle(origin[1], origin[2], spot[9][1], spot[9][2])
+                            local move = calculate_movement(yaw, camera_angle[2], {255, 0})
+                            if move[1] ~= nil and move[2] ~= nil then
+                                cmd.forwardmove = move[1]
+                                cmd.sidemove = move[2]
+                            end
+                        end
+                    end
+                    if spot[13] > 0 then
+                        spots[i][13] = fade(spots[i][13], false, 0.1)
+                    end
+                end
+                if spot[12] < 255 then
+                    spots[i][12] = fade(spots[i][12], true, 0.1)
+                end
+            else
+                if spot[13] > 0 then
+                    spots[i][13] = fade(spots[i][13], false, 0.1)
+                end
+
+                if spot[12] > 0 then
+                    spots[i][12] = fade(spots[i][12], false, 0.1)
+                end
+            end
+        end
+    end
+
+    if grenade.id ~= nil then
+        handle_throwing(cmd, grenade.id, grenade.run, grenade.thrown_at)
+    end
+
+    if grenade.thrown_at ~= nil and grenade.thrown_at < globals.tickcount() then
+        remove_grenade()
+    end
+    --Disable autostrafer while active
+    ui.set(autostrafer, grenade.id == nil)
+end
+
+local function draw_OOF(center, angle, name, alpha, distance)
+    local size = 5
+    local color = {220, 220, 220, 200}
+
+    color[4] = clamp(0, alpha, color[4])
+
+    --Draw circle
+    local point = {rotate_point(center[1], center[2], angle, distance)}
+    renderer.circle(point[1], point[2], color[1], color[2], color[3], clamp(0, alpha, color[4]), 5, 90, 1)
+    renderer.circle_outline(point[1], point[2], 25, 25, 25, alpha, 5, 90, 1, 2)
+
+    local view_size = 25
+    local top = {rotate_point(point[1], point[2], angle, 15 )} 
+    local left = {rotate_point(point[1], point[2], angle + (view_size), 10 )} 
+    local right = {rotate_point(point[1], point[2], angle - (view_size), 10 )}
+
+    --Draw text
+    renderer.text(point[1], point[2] + 15, 255, 255, 255, alpha, "c", 0, name)
+end
+
+
+local function draw_indicator(position, color, alpha, name)
+    renderer.circle(position[1], position[2], color[1], color[2], color[3], clamp(0, alpha, color[4]), 5, 90, 1)
+    renderer.circle_outline(position[1], position[2], 25, 25, 25, alpha, 5, 90, 1, 2)
+    renderer.text(position[1], position[2] + 15, 255, 255, 255, alpha, "c", 0, name)
+end
+
+local function offscreen(position)
+    local screen = {client.screen_size()}
+
+    if position[1] == nil or position[2] == nil then
+        return true
+    end
+
+    if position[1] < 0 or position[1] > screen[1] then
+
+        return true
+    end
+
+    if position[2] < 0 or position[2] > screen[2] then
+        return true
+    end
+
+    return false
+end
+
+local function paint()
+    local camera_angle = {client.camera_angles()}
+    local origin = {entity.get_origin(lp())}
+
+    --Loop through all spots
+    for i=1, #spots do
+        local spot = spots[i]
+
+        --Find if we're looking near the spot indicator
+        local near = distance_pitch(camera_angle, spot[11], 20)
+        local color = near and {150, 255, 50, 255} or {255, 100, 100, 255}
+
+        --Draw on ground indicators
+        if spot[12] > 0 then
+            local screen_pos = {renderer.world_to_screen(spot[9][1], spot[9][2], spot[9][3])}
+            if offscreen(screen_pos) == false then
+                draw_indicator(screen_pos, {150, 150, 150, 200}, spot[12], spot[2])
+            end
+        end
+
+        --Draw grenade point indicators
+        if spot[13] > 0 then
+            local screen_pos = {renderer.world_to_screen(spot[10][1], spot[10][2], spot[10][3])}
+            if offscreen(screen_pos) == false then
+                --Draw normal
+                draw_indicator(screen_pos, color, spot[13], spot[2])
+            else
+                --Out of FOV
+                local angle = calculate_angle(origin[1], origin[2], spot[10][1], spot[10][2])
+                draw_OOF(center, angle - camera_angle[2], spot[2], spot[13], 250)
+            end
+        end
+    end
+end
+
+--[[
+local butt = ui.new_button("lua", "a", "Export", function()
+    --Export for new spots
+    local camera = {client.camera_angles()}
+    local origin = {entity.get_origin(lp())}
+    local map = globals.mapname()
+    local end_origin = extrapolate_angle({camera[1], camera[2]})
+    local string = string.format("{%d, 'name', '%s', {48, 46}, release_mode, jump, duck, run_ticks, {%f, %f, %f}, {%f, %f, %f}, {%f, %f}, 0, 0},", spots[#spots][1] + 1, map, origin[1], origin[2], origin[3], end_origin[1], end_origin[2], end_origin[3], camera[1], camera[2])
+    print(string)
+end)
+]]
+
+--Callbacks
+local function callback(event, ...)
+    local callbacks = {...}
+    for i=1, #callbacks do
+        client.set_event_callback(event, callbacks[i])
+    end
+end
+
+callback("setup_command", setup_command)
+callback("paint", paint)
