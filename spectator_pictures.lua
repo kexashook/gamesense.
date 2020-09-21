@@ -15,9 +15,9 @@ end
 local function spectators(index)
     local specs = {}
 
-    for i=1, 64 do
+    for i=0, 64 do
         local obvserver = entity.get_prop(i, "m_hObserverTarget") 
-        if obvserver == index then
+        if obvserver == index and entity.is_alive(i) == false then
             table.insert(specs, i)
         end
     end
