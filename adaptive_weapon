@@ -1,1 +1,465 @@
-local a=ui.reference("RAGE","Aimbot","Target selection")local b=ui.reference("RAGE","Aimbot","Target hitbox")local c={ui.reference("RAGE","Aimbot","Multi-point")}local d=ui.reference("RAGE","Aimbot","Multi-point scale")local e=ui.reference("RAGE","Aimbot","Prefer safe point")local f=ui.reference("RAGE","Aimbot","Force safe point")local g=ui.reference("RAGE","Aimbot","Force safe point on limbs")local h=ui.reference("RAGE","Aimbot","Automatic fire")local i=ui.reference("RAGE","Aimbot","Automatic penetration")local j=ui.reference("RAGE","Aimbot","Silent aim")local k=ui.reference("RAGE","Aimbot","Minimum hit chance")local l=ui.reference("RAGE","Aimbot","Minimum damage")local m=ui.reference("RAGE","Aimbot","Automatic scope")local n=ui.reference("RAGE","Aimbot","Reduce aim step")local o=ui.reference("RAGE","Aimbot","Maximum FOV")local p=ui.reference("RAGE","Aimbot","Log misses due to spread")local q=ui.reference("RAGE","Other","Remove recoil")local r=ui.reference("RAGE","Other","Delay shot")local s={ui.reference("RAGE","Other","Quick stop")}local t=ui.reference("RAGE","Other","Quick stop options")local u={ui.reference("RAGE","Other","Quick peek assist")}local v=ui.reference("RAGE","Other","Quick peek assist display")local w=ui.reference("RAGE","Other","Anti-aim correction")local x=ui.reference("RAGE","Other","Anti-aim correction override")local y={ui.reference("RAGE","Other","Prefer body aim"),ui.reference("RAGE","Other","Prefer body aim disablers")}local z=ui.reference("RAGE","Other","Force body aim")local A=ui.reference("RAGE","Other","Force body aim on peek")local B={ui.reference("RAGE","Other","Double tap")}local C=ui.reference("RAGE","Other","Double tap mode")local D=ui.reference("RAGE","Other","Double tap hit chance")local E=ui.reference("RAGE","Other","Double tap fake lag limit")local F=ui.reference("RAGE","Other","Double tap quick stop")local G=ui.reference("RAGE","Other","Accuracy boost")local H=ui.reference("RAGE","Other","Duck peek assist")local I=ui.reference("RAGE","Aimbot","Low FPS mitigations")local J={a,b,c[1],c[2],c[3],d,e,f,g,I,h,i,j,k,l,m,n,o,p}local K={q,s[1],s[2],t,u[1],u[2],v,w,x,y[1],y[2],z,A,B[1],B[2],C,D,E,F}local L=entity.get_local_player;local M={client.screen_size()}local N={M[1]/2,M[2]/2}local function O(table,P)for Q=1,#table do if table[Q]==P then return true,Q end end;return false,nil end;local function R(table,S)for Q=1,#table do ui.set_visible(table[Q],S)end end;local T={"Global","Auto","Scout","Awp","Heavy pistol","Pistol","Submachine gun","Shotguns","Taser"}local U={{nil},{"CWeaponG3SG1","CWeaponSCAR20"},{"CWeaponSSG08"},{"CWeaponAWP"},{"CDEagle"},{"CWeaponHKP2000","CWeaponElite","CWeaponP250"},{"CWeaponMAC10","CWeaponMP7","CWeaponUMP45","CWeaponP90","CWeaponBizon","CWeaponMP9"},{"CWeaponNOVA","CWeaponXM1014","CWeaponMag7","CWeaponSawedoff"},{"CWeaponTaser"}}local V={[0]="Auto",[101]="HP + 1",[102]="HP + 2",[103]="HP + 3",[104]="HP + 4",[105]="HP + 5",[106]="HP + 6",[107]="HP + 7",[108]="HP + 8",[109]="HP + 9",[110]="HP + 10",[111]="HP + 11",[112]="HP + 12",[113]="HP + 13",[114]="HP + 14",[115]="HP + 15",[116]="HP + 16",[117]="HP + 17",[118]="HP + 18",[119]="HP + 19",[120]="HP + 20",[121]="HP + 21",[122]="HP + 22",[123]="HP + 23",[124]="HP + 24",[125]="HP + 25",[126]="HP + 26"}local W={}local X={"LUA","B"}local Y=ui.new_label(X[1],X[2],"Matrix adaptive weapon (v1.0)")local Z=ui.new_combobox(X[1],X[2],"Weapon",T)for Q=1,#T do local _=T[Q]W[Q]={weapon=_,enable=ui.new_checkbox(X[1],X[2],"Enable ".._.." config"),targetselect=ui.new_combobox(X[1],X[2],"Target selection \n ".._,{"Cycle","Cycle (2x)","Near crosshair","Highest damage","Lowest ping","Best K/D ratio","Best hit chance"}),targethitbox=ui.new_multiselect(X[1],X[2],"Target hitbox \n ".._,{"Head","Chest","Stomach","Arms","Legs","Feet"}),multipoint=ui.new_multiselect(X[1],X[2],"Multi-point \n ".._,{"Head","Chest","Stomach","Arms","Legs","Feet"}),multipointmode=ui.new_combobox(X[1],X[2],"\n Multi-point ".._,{"Low","Medium","High"}),multipointscale=ui.new_slider(X[1],X[2],"Multi-point scale \n".._,24,100,ui.get(d),true,"%",1,{[24]="Auto"}),prefersafe=ui.new_checkbox(X[1],X[2],"Prefer safe point \n ".._),forcesafe=ui.new_hotkey(X[1],X[2],"Force safe point \n".._),legsafe=ui.new_checkbox(X[1],X[2],"Force safe point on limbs \n".._),hitchance=ui.new_slider(X[1],X[2],"Hit chance \n".._,0,100,75,true,"%"),dthitchance=ui.new_slider(X[1],X[2],"DT Hit chance \n".._,0,100,60,true,"%"),vismindmg=ui.new_slider(X[1],X[2],"Visible minimum damage \n".._,0,126,35,true,"",1,V),wallmindmg=ui.new_slider(X[1],X[2],"Awall minimum damage \n".._,0,126,25,true,"",1,V),special=ui.new_multiselect(X[1],X[2],"Extras \n".._,{"No-scope hit chance","In-air hit chance","DT minimum damage","Hotkey minimum damage"}),noscope=ui.new_slider(X[1],X[2],"No-scope hit chance \n".._,0,100,50,true,"%"),noscopeRange=ui.new_slider(X[1],X[2],"Max no-scope distance",10,101,75,true,"ft",1,{[101]="Unlimited"}),inair=ui.new_slider(X[1],X[2],"In-air hit chance \n".._,0,100,25,true,"%"),dtmindmg=ui.new_slider(X[1],X[2],"DT minimum damage \n".._,0,126,45,true,"",1,V),hkmindmg=ui.new_slider(X[1],X[2],"Hotkey minimum damage \n".._,0,126,10,true,"",1,V),hk=ui.new_hotkey(X[1],X[2],"Hotkey \n minimum damage ".._,true),quickstop=ui.new_checkbox(X[1],X[2],"Quick stop \n".._),quickstopKey=ui.new_hotkey(X[1],X[2],"Quick stop key \n".._,true),quickstopOptions=ui.new_multiselect(X[1],X[2],"Quick stop optons \n".._,{"Early","Slow motion","Duck","Fake duck","Move between shots","Ignore molotov"}),doubletapStopOptions=ui.new_multiselect(X[1],X[2],"Double tap quick stop \n".._,{"Slow motion","Duck","Move between shots"}),preferbody=ui.new_checkbox(X[1],X[2],"Prefer body aim \n".._),preferbodyDisablers=ui.new_multiselect(X[1],X[2],"Prefer body aim disablers \n".._,{"Low inaccuracy","Target shot fired","Target resolved","Safe point headshot","Low damage","Sideways","High pitch","High velocity","Desync overlap"}),safepontConditions=ui.new_checkbox(X[1],X[2],"Force safe point conditions \n".._),prefersafeon=ui.new_multiselect(X[1],X[2],"safe point conditions \n".._,{"After 'x' shots","Enemy DT","Enemy high choke","Enemy Scouter","Enemy low health","Enemy low velocity"}),xshots=ui.new_slider(X[1],X[2],"After 'x' shots \n".._,1,10,4,true,"x",1),delayshot=ui.new_checkbox(X[1],X[2],"Delay shot \n".._),delayshotkey=ui.new_hotkey(X[1],X[2],"Delay shot key \n".._,true),forceBody=ui.new_multiselect(X[1],X[2],"Force body aim conditions \n".._,{"Always on","Peek","DT","Hotkey"}),forcebodyhk=ui.new_hotkey(X[1],X[2],"Force body aim hotkey \n".._,true),accboost=ui.new_combobox(X[1],X[2],"Accuracy boost \n".._,{"Off","Low","Medium","High","Maximum"})}end;local a0=ui.new_checkbox(X[1],X[2],"Debug indicators")local a1=ui.new_color_picker(X[1],X[2],"Indicators color",255,75,75,255)local function a2()for Q=1,#W do local S=W[Q].weapon==ui.get(Z)if W[Q].weapon==T[1]then ui.set_visible(W[Q].enable,false)ui.set(W[Q].enable,true)else ui.set_visible(W[Q].enable,S)end;local a3=ui.get(W[Q].enable)and S;ui.set_visible(W[Q].targetselect,a3)ui.set_visible(W[Q].targethitbox,a3)ui.set_visible(W[Q].multipoint,a3)ui.set_visible(W[Q].multipointmode,a3 and#ui.get(W[Q].multipoint)~=0)ui.set_visible(W[Q].multipointscale,a3 and#ui.get(W[Q].multipoint)~=0)ui.set_visible(W[Q].prefersafe,a3)ui.set_visible(W[Q].forcesafe,a3)ui.set_visible(W[Q].legsafe,a3)ui.set_visible(W[Q].dthitchance,a3)ui.set_visible(W[Q].hitchance,a3)ui.set_visible(W[Q].vismindmg,a3)ui.set_visible(W[Q].wallmindmg,a3)ui.set_visible(W[Q].special,a3)ui.set_visible(W[Q].noscope,a3 and O(ui.get(W[Q].special),"No-scope hit chance"))ui.set_visible(W[Q].noscopeRange,a3 and O(ui.get(W[Q].special),"No-scope hit chance"))ui.set_visible(W[Q].inair,a3 and O(ui.get(W[Q].special),"In-air hit chance"))ui.set_visible(W[Q].dtmindmg,a3 and O(ui.get(W[Q].special),"DT minimum damage"))ui.set_visible(W[Q].hk,a3 and O(ui.get(W[Q].special),"Hotkey minimum damage"))ui.set_visible(W[Q].hkmindmg,a3 and O(ui.get(W[Q].special),"Hotkey minimum damage"))ui.set_visible(W[Q].quickstop,a3)ui.set_visible(W[Q].quickstopKey,a3 and ui.get(W[Q].quickstop))ui.set_visible(W[Q].quickstopOptions,a3 and ui.get(W[Q].quickstop))ui.set_visible(W[Q].doubletapStopOptions,a3 and ui.get(W[Q].quickstop))ui.set_visible(W[Q].preferbody,a3 and(O(ui.get(W[Q].targethitbox),"Chest")or O(ui.get(W[Q].targethitbox),"Stomach")))ui.set_visible(W[Q].preferbodyDisablers,a3 and ui.get(W[Q].preferbody)and(O(ui.get(W[Q].targethitbox),"Chest")or O(ui.get(W[Q].targethitbox),"Stomach")))ui.set_visible(W[Q].forceBody,a3)ui.set_visible(W[Q].forcebodyhk,a3 and O(ui.get(W[Q].forceBody),"Hotkey"))ui.set_visible(W[Q].safepontConditions,a3)ui.set_visible(W[Q].prefersafeon,a3 and ui.get(W[Q].safepontConditions))ui.set_visible(W[Q].xshots,a3 and O(ui.get(W[Q].prefersafeon),"After 'x' shots")and ui.get(W[Q].safepontConditions))ui.set_visible(W[Q].delayshot,a3)ui.set_visible(W[Q].delayshotkey,a3 and ui.get(W[Q].delayshot))ui.set_visible(W[Q].accboost,a3)end;ui.set_visible(a1,ui.get(a0))end;local a4="Global"local a5="Global"local function a6(a7,a8)if a8==nil or entity.is_alive(a8)==false or L()==nil or entity.is_alive(L())==false then return false end;if a7[1]==nil then return false end;for Q=1,18 do local a9={entity.hitbox_position(a8,Q)}if a9[1]==nil then return false end;local aa={client.trace_line(L(),a7[1],a7[2],a7[3],a9[1],a9[2],a9[3])}if aa[2]==a8 then return true end end;return false end;local ab={"Low inaccuracy","Target shot fired","Target resolved","Safe point headshot","Low damage"}local function ac(ad)while ad>180 do ad=ad-360 end;while ad<-180 do ad=ad+360 end;return ad end;local function ae(af,ag,ah,ai)local aj=ag-ai;local ak=af-ah;local al=math.atan(aj/ak)al=ac(al*180/math.pi)if ak>=0 then al=ac(al+180)end;return al end;local function am(an,ao)local ap={an[1]-ao[1],an[2]-ao[2]}return math.sqrt(ap[1]*ap[1]+ap[2]*ap[2])end;local function aq(ar)ar=ar*0.0254;return ar*3.281 end;local function as()local at=entity.get_players(true)local au=nil;local av=math.huge;for Q=1,#at do local aw={entity.get_origin(L())}local ax={entity.get_origin(at[Q])}if aw[1]~=nil and ax[1]~=nil then local ay=am(aw,ax)if ay<av then av=ay;au=at[Q]end end end;if au~=nil then return au,aq(av)else return nil,0 end end;local az={index={},misses={},shift={}}local function aA(aB)table.insert(az.index,aB)table.insert(az.misses,0)table.insert(az.shift,{0,0,0})end;local function aC(aD)table.remove(az.index,aD)table.remove(az.misses,aD)table.remove(az.shift,aD)end;local function aE(aF)client.update_player_list()local at=entity.get_players(true)for Q=1,#at do if entity.is_alive(at[Q])then local aw={entity.get_origin(L())}local aG={entity.get_origin(at[Q])}local aH={entity.get_prop(at[Q],"m_angEyeAngles")}local aI=false;if O(aF,"Sideways")then local aJ=ac(ae(aw[1],aw[2],aG[1],aG[2])+180)local aK=math.abs(ac(aH[2]-(aJ-90)))local aL=math.abs(ac(aH[2]-(aJ+90)))if aK<30 or aL<30 then aI=true end end;if O(aF,"High pitch")then if aH[1]<45 then aI=true end end;if O(aF,"High velocity")then local aM={entity.get_prop(at[Q],"m_vecVelocity")}local aN=math.sqrt(aM[1]*aM[1]+aM[2]*aM[2])if aN>225 then aI=true end end;if O(aF,"Desync overlap")then local aO=entity.get_prop(at[Q],"m_iTeamNum")==2;local aP=entity.get_prop(at[Q],"m_flDuckAmount")>0.9;if aO and aP then aI=true end end;plist.set(at[Q],"Override prefer body aim",aI and"Off"or"-")end end end;local function aQ(aF,aR)client.update_player_list()local at=entity.get_players(true)for Q=1,#az.index do if O(at,az.index[Q])then if plist.get(az.index[Q],"Correction active")then local aS=false;if O(aF,"After 'x' shots")then if az.misses[Q]>=aR then aS=true end end;if O(aF,"Enemy DT")then if az.shift[Q][2]<0 then aS=true end end;if O(aF,"Enemy high choke")then if az.shift[Q][3]>=10 then aS=true end end;if O(aF,"Enemy Scouter")then local aT=entity.get_player_weapon(az.index[Q])if aT~=nil then local aU=entity.get_classname(aT)if aU=="CWeaponSSG08"then aS=true end end end;if O(aF,"Enemy low health")then local aV=entity.get_prop(az.index[Q],"m_iHealth")if aV<=35 then aS=true end end;if O(aF,"Enemy low velocity")then local aM={entity.get_prop(az.index[Q],"m_vecVelocity")}local aN=math.sqrt(aM[1]*aM[1]+aM[2]*aM[2])if aN<100 then aS=true end end;plist.set(az.index[Q],"Override safe point",aS and"On"or"-")end end end end;local aW=0;local aX=0;local function aY()if L()==nil or entity.is_alive(L())==false then return end;local aZ=globals.tickinterval()local a_=globals.tickcount()local b0=entity.get_prop(L(),"m_flSimulationTime")or 0;if b0==nil then return end;if b0~=aW then aX=b0/aZ-a_;aW=b0 end;for Q=1,#az.index do local b0=entity.get_prop(az.index[Q],"m_flSimulationTime")or 0;if b0~=nil then if b0~=az.shift[Q][1]then az.shift[Q][3]=(b0-az.shift[Q][1])/aZ;az.shift[Q][2]=b0/aZ-a_;az.shift[Q][1]=b0 end end end end;local function b1()local at=entity.get_players(true)for Q=1,#at do if O(az.index,at[Q])==false then aA(at[Q])end end;for Q=1,#az.index do if O(at,az.index[Q])==false then aC(Q)end end end;local function b2(b3)local a9=b3.target;local b4,Q=O(az.index,a9)if b4 and b3.reason=="?"then az.misses[Q]=az.misses[Q]+1 end end;local function b5()for Q=1,#az.index do b2({target=az.index[Q],reason="?"})end end;local function b6()if L()==nil and entity.is_alive(L())==false then return end;b1()local aT=entity.get_player_weapon(L())if aT==nil then return end;local aU=entity.get_classname(aT)if aU==nil then return end;local b7=nil;for Q=2,#U do local b8=U[Q]if ui.get(W[Q].enable)then for b9=1,#b8 do if b8[b9]==aU then b7=Q;break end end end;if b7==Q then break end end;a4=T[b7==nil and 1 or b7]if a4~=a5 then ui.set(Z,a4)a5=a4 end;local b4,Q=O(T,a4)if b4 then ui.set(a,ui.get(W[Q].targetselect))ui.set(b,#ui.get(W[Q].targethitbox)==0 and{"Head"}or ui.get(W[Q].targethitbox))ui.set(c[1],#ui.get(W[Q].multipoint)==0 and{"Head"}or ui.get(W[Q].multipoint))ui.set(c[3],ui.get(W[Q].multipointmode))ui.set(d,ui.get(W[Q].multipointscale))ui.set(e,ui.get(W[Q].prefersafe))ui.set(f,ui.get(W[Q].forcesafe)and"Always on"or"On hotkey")ui.set(g,ui.get(W[Q].legsafe))local ba=ui.get(W[Q].hitchance)if O(ui.get(W[Q].special),"No-scope hit chance")then local bb={11,38,9,40}local aT=entity.get_player_weapon(L())if aT~=nil then local bc=entity.get_prop(aT,"m_iItemDefinitionIndex")or 0;local bd=O(bb,bc)and(entity.get_prop(L(),"m_bIsScoped")or 0)==1;local a9,av=as()local be=ui.get(W[Q].noscopeRange)~=101 and ui.get(W[Q].noscopeRange)or math.huge;if not bd and be>=av then ui.set(m,false)ba=ui.get(W[Q].noscope)else ui.set(m,true)end end else ui.set(m,true)end;if O(ui.get(W[Q].special),"In-air hit chance")then local bf=bit.band(entity.get_prop(L(),"m_fFlags")or 0,1)==0;if bf then ba=ui.get(W[Q].inair)end end;ui.set(k,ba)ui.set(D,ui.get(W[Q].dthitchance))local bg=ui.get(W[Q].wallmindmg)local at=entity.get_players(true)local aw={entity.get_origin(L())}for b3=1,#at do if a6(aw,at[b3])then bg=ui.get(W[Q].vismindmg)break end end;if O(ui.get(W[Q].special),"DT minimum damage")then local aT=entity.get_player_weapon(L())local bh=math.max(entity.get_prop(aT,"m_flNextPrimaryAttack")or 0,entity.get_prop(L(),"m_flNextAttack")or 0)if aX<0 and bh<globals.curtime()and globals.chokedcommands()<=ui.get(E)then bg=ui.get(W[Q].dtmindmg)end end;if O(ui.get(W[Q].special),"Hotkey minimum damage")then if ui.get(W[Q].hk)then bg=ui.get(W[Q].hkmindmg)end end;ui.set(l,bg)ui.set(s[1],ui.get(W[Q].quickstop)and ui.get(W[Q].quickstopKey))ui.set(s[2],"Always on")ui.set(t,ui.get(W[Q].quickstopOptions))ui.set(F,ui.get(W[Q].quickstop)and ui.get(W[Q].doubletapStopOptions)or{})ui.set(y[1],ui.get(W[Q].preferbody))if ui.get(W[Q].preferbody)then local bi={}local bj=ui.get(W[Q].preferbodyDisablers)for bk=1,#bj do if O(ab,bj[bk])then table.insert(bi,bj[bk])end end;ui.set(y[2],bi)aE(bj)end;local bl=false;if O(ui.get(W[Q].forceBody),"Always on")then bl=true end;ui.set(A,O(ui.get(W[Q].forceBody),"Peek"))if O(ui.get(W[Q].forceBody),"DT")then local aT=entity.get_player_weapon(L())local bh=math.max(entity.get_prop(aT,"m_flNextPrimaryAttack")or 0,entity.get_prop(L(),"m_flNextAttack")or 0)if aX<0 and bh<globals.curtime()and globals.chokedcommands()<=ui.get(E)then bl=true end end;if O(ui.get(W[Q].forceBody),"Hotkey")then if ui.get(W[Q].forcebodyhk)then bl=true end end;ui.set(z,bl and"Always on"or"On hotkey")aQ(ui.get(W[Q].prefersafeon),ui.get(W[Q].xshots))ui.set(r,ui.get(W[Q].delayshot)and ui.get(W[Q].delayshotkey))ui.set(G,ui.get(W[Q].accboost))end end;client.set_event_callback("paint",function()if ui.get(a0)then local bm={ui.get(a1)}local bn=ui.get(l)if V[bn]~=nil then bn=V[bn]end;renderer.indicator(bm[1],bm[2],bm[3],bm[4],"Minimum damage: "..bn)renderer.indicator(bm[1],bm[2],bm[3],bm[4],"Hit chance: "..ui.get(k).."%")end end)client.set_event_callback("paint_ui",a2)client.set_event_callback("run_command",b6)client.set_event_callback("net_update_end",aY)client.set_event_callback("aim_miss",b2)
+local targetSelection = ui.reference("RAGE", "Aimbot", "Target selection")
+local targetHitbox = ui.reference("RAGE", "Aimbot", "Target hitbox")
+local multiPoint = {ui.reference("RAGE", "Aimbot", "Multi-point")}
+local multiPointScale = ui.reference("RAGE", "Aimbot", "Multi-point scale")
+local preferSafePoint = ui.reference("RAGE", "Aimbot", "Prefer safe point")
+local forceSafePoint = ui.reference("RAGE", "Aimbot", "Force safe point")
+local forceSafePointLimbs = ui.reference("RAGE", "Aimbot", "Force safe point on limbs")
+local automaticFire = ui.reference("RAGE", "Aimbot", "Automatic fire")
+local automaticWall = ui.reference("RAGE", "Aimbot", "Automatic penetration")
+local slientAim = ui.reference("RAGE", "Aimbot", "Silent aim")
+local minimumHC = ui.reference("RAGE", "Aimbot", "Minimum hit chance")
+local minimumMD = ui.reference("RAGE", "Aimbot", "Minimum damage")
+local autoScope = ui.reference("RAGE", "Aimbot", "Automatic scope")
+local reduceAimStep = ui.reference("RAGE", "Aimbot", "Reduce aim step")
+local maxFOV = ui.reference("RAGE", "Aimbot", "Maximum FOV")
+local logMissesDueToSpread = ui.reference("RAGE", "Aimbot", "Log misses due to spread")
+local removeRecoil = ui.reference("RAGE", "Other", "Remove recoil")
+local delayShot = ui.reference("RAGE", "Other", "Delay shot")
+local quickStop = {ui.reference("RAGE", "Other", "Quick stop")}
+local quickStopOptions = ui.reference("RAGE", "Other", "Quick stop options")
+local quickPeekAssist = {ui.reference("RAGE", "Other", "Quick peek assist")}
+local quickPeekAssistColor = ui.reference("RAGE", "Other", "Quick peek assist display")
+local resolver = ui.reference("RAGE", "Other", "Anti-aim correction")
+local resolverOverride = ui.reference("RAGE", "Other", "Anti-aim correction override")
+local preferBodyAim = {ui.reference("RAGE", "Other", "Prefer body aim"), ui.reference("RAGE", "Other", "Prefer body aim disablers")}
+local forceBodyAim = ui.reference("RAGE", "Other", "Force body aim")
+local forceBodyAimPeek = ui.reference("RAGE", "Other", "Force body aim on peek")
+local doubleTaps = {ui.reference("RAGE", "Other", "Double tap")}
+local doubleTapsOptions = ui.reference("RAGE", "Other", "Double tap mode")
+local doubleTapsHitChance = ui.reference("RAGE", "Other", "Double tap hit chance")
+local doubleTapsFL = ui.reference("RAGE", "Other", "Double tap fake lag limit")
+local doubleTapsQS = ui.reference("RAGE", "Other", "Double tap quick stop")
+local accuracyBoost = ui.reference("RAGE", "Other", "Accuracy boost")
+local duckPeekAssist = ui.reference("RAGE", "Other", "Duck peek assist")
+local lowFpsThing = ui.reference("RAGE", "Aimbot", "Low FPS mitigations")
+
+local aimItrems = {targetSelection, targetHitbox, multiPoint[1], multiPoint[2], multiPoint[3], multiPointScale, preferSafePoint, forceSafePoint, forceSafePointLimbs, lowFpsThing, automaticFire, automaticWall, slientAim, minimumHC, minimumMD, autoScope, reduceAimStep, maxFOV, logMissesDueToSpread} 
+local otheItems = {removeRecoil, quickStop[1], quickStop[2], quickStopOptions, quickPeekAssist[1], quickPeekAssist[2], quickPeekAssistColor, resolver, resolverOverride, preferBodyAim[1], preferBodyAim[2], forceBodyAim, forceBodyAimPeek, doubleTaps[1], doubleTaps[2], doubleTapsOptions, doubleTapsHitChance, doubleTapsFL, doubleTapsQS}
+
+local lp = entity.get_local_player
+local screen = {client.screen_size()}
+local center = {screen[1]/2, screen[2]/2}
+
+local function includes(table, key)
+    for i=1, #table do
+        if table[i] == key then
+            return true, i
+        end
+    end
+    return false, nil
+end
+
+local function setVis(table, state)
+    for i=1, #table do
+        ui.set_visible(table[i], state)
+    end
+end
+
+local weaponNames = {"Global", "Auto", "Scout", "Awp", "Heavy pistol", "Pistol", "Submachine gun", "Shotguns", "Taser"}
+local weaponClasses = {{nil}, {"CWeaponG3SG1", "CWeaponSCAR20"}, {"CWeaponSSG08"}, {"CWeaponAWP"}, {"CDEagle"}, {"CWeaponHKP2000", "CWeaponElite", "CWeaponP250"}, {"CWeaponMAC10", "CWeaponMP7", "CWeaponUMP45", "CWeaponP90", "CWeaponBizon", "CWeaponMP9"}, {"CWeaponNOVA", "CWeaponXM1014", "CWeaponMag7", "CWeaponSawedoff"}, {"CWeaponTaser"}}
+local damageIdx  = { [0] = "Auto", [101] = "HP + 1", [102] = "HP + 2", [103] = "HP + 3", [104] = "HP + 4", [105] = "HP + 5", [106] = "HP + 6", [107] = "HP + 7", [108] = "HP + 8", [109] = "HP + 9", [110] = "HP + 10", [111] = "HP + 11", [112] = "HP + 12", [113] = "HP + 13", [114] = "HP + 14", [115] = "HP + 15", [116] = "HP + 16", [117] = "HP + 17", [118] = "HP + 18", [119] = "HP + 19", [120] = "HP + 20", [121] = "HP + 21", [122] = "HP + 22", [123] = "HP + 23", [124] = "HP + 24", [125] = "HP + 25", [126] = "HP + 26" }
+
+local weapons = {}
+
+local menuPos = {"LUA", "B"}
+
+local branding = ui.new_label(menuPos[1], menuPos[2], "Matrix adaptive weapon (v1.0)")
+local currentWeapon = ui.new_combobox(menuPos[1], menuPos[2], "Weapon", weaponNames)
+
+for i=1, #weaponNames do
+    local name = weaponNames[i]
+    weapons[i] = {
+        weapon = name,
+        enable = ui.new_checkbox(menuPos[1], menuPos[2], "Enable " .. name .. " config"),
+        targetselect = ui.new_combobox(menuPos[1], menuPos[2], "Target selection \n " .. name, {"Cycle", "Cycle (2x)", "Near crosshair", "Highest damage", "Lowest ping", "Best K/D ratio", "Best hit chance"}),
+        targethitbox = ui.new_multiselect(menuPos[1], menuPos[2], "Target hitbox \n " .. name, {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
+        multipoint = ui.new_multiselect(menuPos[1], menuPos[2], "Multi-point \n " .. name, {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
+        multipointmode = ui.new_combobox(menuPos[1], menuPos[2], "\n Multi-point " .. name, {"Low", "Medium", "High"}),
+        multipointscale = ui.new_slider(menuPos[1], menuPos[2], "Multi-point scale \n" .. name, 24, 100, ui.get(multiPointScale), true, "%", 1, {[24] = "Auto"}),
+        prefersafe = ui.new_checkbox(menuPos[1], menuPos[2], "Prefer safe point \n " .. name),
+        forcesafe = ui.new_hotkey(menuPos[1], menuPos[2], "Force safe point \n" .. name), 
+        legsafe = ui.new_checkbox(menuPos[1], menuPos[2], "Force safe point on limbs \n" .. name),
+        hitchance = ui.new_slider(menuPos[1], menuPos[2], "Hit chance \n" .. name, 0, 100, 75, true, "%"),
+        dthitchance = ui.new_slider(menuPos[1], menuPos[2], "DT Hit chance \n" .. name, 0, 100, 60, true, "%"),
+        mindmg = ui.new_slider(menuPos[1], menuPos[2], "Minimum damage \n" .. name, 0, 126, 35, true, "", 1, damageIdx),
+        special = ui.new_multiselect(menuPos[1], menuPos[2], "Extras \n" .. name, {"No-scope hit chance", "In-air hit chance", "Visible minimum damage", "DT minimum damage", "Hotkey minimum damage"}),
+        noscope = ui.new_slider(menuPos[1], menuPos[2], "No-scope hit chance \n" .. name, 0, 100, 50, true, "%"),
+        noscopeRange = ui.new_slider(menuPos[1], menuPos[2], "Max no-scope distance", 10, 101, 75, true, "ft", 1, {[101] = "Unlimited"}),
+        inair = ui.new_slider(menuPos[1], menuPos[2], "In-air hit chance \n" .. name, 0, 100, 25, true, "%"),
+        vismindmg = ui.new_slider(menuPos[1], menuPos[2], "Visible minimum damage \n" .. name, 0, 126, 25, true, "", 1, damageIdx),
+        dtmindmg = ui.new_slider(menuPos[1], menuPos[2], "DT minimum damage \n" .. name, 0, 126, 45, true, "", 1, damageIdx),
+        hkmindmg = ui.new_slider(menuPos[1], menuPos[2], "Hotkey minimum damage \n" .. name, 0, 126, 10, true, "", 1, damageIdx),
+        hk = ui.new_hotkey(menuPos[1], menuPos[2], "Hotkey \n minimum damage " .. name, true),
+        quickstop = ui.new_checkbox(menuPos[1], menuPos[2], "Quick stop \n" .. name),
+        quickstopKey = ui.new_hotkey(menuPos[1], menuPos[2], "Quick stop key \n" .. name, true),
+        quickstopOptions = ui.new_multiselect(menuPos[1], menuPos[2], "Quick stop optons \n" .. name, {"Early", "Slow motion", "Duck", "Fake duck", "Move between shots", "Ignore molotov"}),
+        doubletapStopOptions = ui.new_multiselect(menuPos[1], menuPos[2], "Double tap quick stop \n" .. name, {"Slow motion", "Duck", "Move between shots"}),
+        preferbody = ui.new_checkbox(menuPos[1], menuPos[2], "Prefer body aim \n" .. name),
+        preferbodyDisablers = ui.new_multiselect(menuPos[1], menuPos[2], "Prefer body aim disablers \n" .. name, {"Low inaccuracy", "Target shot fired", "Target resolved", "Safe point headshot", "Low damage"}),
+        delayshot = ui.new_checkbox(menuPos[1], menuPos[2], "Delay shot \n" .. name), 
+        delayshotkey = ui.new_hotkey(menuPos[1], menuPos[2], "Delay shot key \n" .. name, true),
+        forceBody = ui.new_multiselect(menuPos[1], menuPos[2], "Force body aim conditions \n" .. name, {"Always on", "Peek", "DT", "Hotkey"}),
+        forcebodyhk = ui.new_hotkey(menuPos[1], menuPos[2], "Force body aim hotkey \n" .. name, true),
+        accboost = ui.new_combobox(menuPos[1], menuPos[2], "Accuracy boost \n" .. name, {"Off", "Low", "Medium", "High", "Maximum"})
+    }
+end
+
+local indicators = ui.new_checkbox(menuPos[1], menuPos[2], "Debug indicators")
+local color = ui.new_color_picker(menuPos[1], menuPos[2], "Indicators color", 255, 75, 75, 255)
+
+local function handleVis()
+    for i=1, #weapons do
+        local state = weapons[i].weapon == ui.get(currentWeapon)
+        if weapons[i].weapon == weaponNames[1] then
+            ui.set_visible(weapons[i].enable, false)    
+            ui.set(weapons[i].enable, true)
+        else
+            ui.set_visible(weapons[i].enable, state)
+        end
+        
+        local actualState = ui.get(weapons[i].enable) and state
+        ui.set_visible(weapons[i].targetselect, actualState)
+        ui.set_visible(weapons[i].targethitbox, actualState)
+        ui.set_visible(weapons[i].multipoint, actualState)
+        ui.set_visible(weapons[i].multipointmode, actualState and #ui.get(weapons[i].multipoint) ~= 0)
+        ui.set_visible(weapons[i].multipointscale, actualState and #ui.get(weapons[i].multipoint) ~= 0)
+        ui.set_visible(weapons[i].prefersafe, actualState)
+        ui.set_visible(weapons[i].forcesafe, actualState)
+        ui.set_visible(weapons[i].legsafe, actualState)
+        ui.set_visible(weapons[i].dthitchance, actualState)
+        ui.set_visible(weapons[i].hitchance, actualState)
+        ui.set_visible(weapons[i].mindmg, actualState)
+        ui.set_visible(weapons[i].special, actualState)
+        ui.set_visible(weapons[i].noscope, actualState and includes(ui.get(weapons[i].special), "No-scope hit chance"))
+        ui.set_visible(weapons[i].noscopeRange, actualState and includes(ui.get(weapons[i].special), "No-scope hit chance"))
+        ui.set_visible(weapons[i].inair, actualState and includes(ui.get(weapons[i].special), "In-air hit chance"))
+        ui.set_visible(weapons[i].vismindmg, actualState and includes(ui.get(weapons[i].special), "Visible minimum damage"))
+        ui.set_visible(weapons[i].dtmindmg, actualState and includes(ui.get(weapons[i].special), "DT minimum damage"))
+        ui.set_visible(weapons[i].hk, actualState and includes(ui.get(weapons[i].special), "Hotkey minimum damage"))
+        ui.set_visible(weapons[i].hkmindmg, actualState and includes(ui.get(weapons[i].special), "Hotkey minimum damage"))
+        ui.set_visible(weapons[i].quickstop, actualState)
+        ui.set_visible(weapons[i].quickstopKey, actualState and ui.get(weapons[i].quickstop))
+        ui.set_visible(weapons[i].quickstopOptions, actualState and ui.get(weapons[i].quickstop))
+        ui.set_visible(weapons[i].doubletapStopOptions, actualState and ui.get(weapons[i].quickstop))
+        ui.set_visible(weapons[i].preferbody, actualState and (includes(ui.get(weapons[i].targethitbox), "Chest") or includes(ui.get(weapons[i].targethitbox), "Stomach")))
+        ui.set_visible(weapons[i].preferbodyDisablers, actualState and ui.get(weapons[i].preferbody) and (includes(ui.get(weapons[i].targethitbox), "Chest") or includes(ui.get(weapons[i].targethitbox), "Stomach")))
+        ui.set_visible(weapons[i].forceBody, actualState)
+        ui.set_visible(weapons[i].forcebodyhk, actualState and includes(ui.get(weapons[i].forceBody), "Hotkey"))
+        ui.set_visible(weapons[i].delayshot, actualState)
+        ui.set_visible(weapons[i].delayshotkey, actualState and ui.get(weapons[i].delayshot))
+        ui.set_visible(weapons[i].accboost, actualState)
+    end
+    ui.set_visible(color, ui.get(indicators))
+end
+
+local activeConfig = "Global"
+local oldActiveWeapon = "Global"
+
+local function isVisible(lpOrigin, ent)
+    if ent == nil or entity.is_alive(ent) == false or lp() == nil or entity.is_alive(lp()) == false then
+        return false
+    end
+
+    if lpOrigin[1] == nil then
+        return false
+    end
+
+    for i=1, 18 do
+        local target = {entity.hitbox_position(ent, i)}
+
+        if target[1] == nil then
+            return false
+        end
+
+        local trace = {client.trace_line(lp(), lpOrigin[1], lpOrigin[2], lpOrigin[3], target[1], target[2], target[3])}
+
+        if trace[2] == ent then
+            return true
+        end
+    end
+    return false
+end
+
+local normalPreferBaims = {"Low inaccuracy", "Target shot fired", "Target resolved", "Safe point headshot", "Low damage"}
+
+local function normalize_yaw(yaw)
+    while yaw > 180 do yaw = yaw - 360 end
+    while yaw < -180 do yaw = yaw + 360 end
+    return yaw
+end
+
+local function calc_angle(localplayerxpos, localplayerypos, enemyxpos, enemyypos)
+	local ydelta = localplayerypos - enemyypos
+	local xdelta = localplayerxpos - enemyxpos
+    local relativeyaw = math.atan( ydelta / xdelta )
+	relativeyaw = normalize_yaw( relativeyaw * 180 / math.pi )
+	if xdelta >= 0 then
+		relativeyaw = normalize_yaw(relativeyaw + 180)
+	end
+    return relativeyaw
+end
+
+local function getDistance(from, to)
+    local delta = {from[1] - to[1], from[2] - to[2]}
+    return math.sqrt(delta[1] * delta[1] + delta[2] * delta[2])
+end
+
+local function convertToFeet(units)
+    units = units * 0.0254 --Meters
+    return units * 3.281
+end
+
+local function getClosestTarget()
+    local enemies = entity.get_players(true)
+
+    local closest = nil
+    local distance = math.huge
+
+    for i=1, #enemies do
+        local origin = {entity.get_origin(lp())}
+        local eOrigin = {entity.get_origin(enemies[i])}
+        if origin[1] ~= nil and eOrigin[1] ~= nil then
+            local dist = getDistance(origin, eOrigin)
+            if dist < distance then
+                distance = dist
+                closest = enemies[i]
+            end
+        end
+    end
+    if closest ~= nil then
+        return closest, convertToFeet(distance)
+    else
+        return nil, 0
+    end
+end
+
+local oldSimTime = 0
+local shiftTicks = 0
+
+local function netUpdateEnd()
+    if lp() == nil or entity.is_alive(lp()) == false then
+        return
+    end
+
+    local tickInt = globals.tickinterval()
+    local tickCount = globals.tickcount()
+
+    local simTime = entity.get_prop(lp(), "m_flSimulationTime") or 0
+
+    if simTime == nil then
+        return
+    end
+
+    if simTime ~= oldSimTime then
+        shiftTicks = (simTime/tickInt) - tickCount
+        oldSimTime = simTime
+    end
+end
+
+local function clamp(min, max, value)
+    if min < max then
+        return math.max(min, math.min(max, value))
+    else
+        return math.max(max, math.min(min, value))
+    end
+end
+
+local function predict(origin, player, amount, limit)
+    local head = origin
+    local vec = {entity.get_prop(player, "m_vecVelocity")}
+    local clamped_vec = {clamp(-limit, limit, vec[1]), clamp(-limit, limit, vec[2]), clamp(-limit, limit, vec[3])}
+    return {head[1] + clamped_vec[1] * amount, head[2] + clamped_vec[2] * amount, head[3]}
+end
+
+
+local function handleWeapons()
+    if lp() == nil and entity.is_alive(lp()) == false then
+        return
+    end
+
+    local weapon = entity.get_player_weapon(lp())
+    if weapon == nil then
+        return
+    end
+
+    local classWeapon = entity.get_classname(weapon)
+    if classWeapon == nil then
+        return
+    end
+
+    local weaponIdx = nil
+
+    --Search through weapons to see if they're being held and enabled in the menu, if the item thats being held is not enabled then it will use global settings
+    for i=2, #weaponClasses do
+        local weaponClass = weaponClasses[i]
+
+        if ui.get(weapons[i].enable) then
+            for w=1, #weaponClass do
+                if weaponClass[w] == classWeapon then
+                    weaponIdx = i
+                    break
+                end
+            end
+        end
+
+        if weaponIdx == i then --We have already found what weapon we're using no need to keep cycling
+            break
+        end
+    end
+
+    --Set to nil to global config
+    activeConfig = weaponNames[weaponIdx == nil and 1 or weaponIdx]
+
+    if activeConfig ~= oldActiveWeapon then
+        ui.set(currentWeapon, activeConfig)
+        oldActiveWeapon = activeConfig
+    end
+
+    local contains, i = includes(weaponNames, activeConfig)
+    if contains then
+        ui.set(targetSelection, ui.get(weapons[i].targetselect))
+        ui.set(targetHitbox, #ui.get(weapons[i].targethitbox) == 0 and {"Head"} or ui.get(weapons[i].targethitbox))
+        ui.set(multiPoint[1], #ui.get(weapons[i].multipoint) == 0 and {} or ui.get(weapons[i].multipoint))
+        ui.set(multiPoint[3], ui.get(weapons[i].multipointmode))
+        ui.set(multiPointScale, ui.get(weapons[i].multipointscale))
+        ui.set(preferSafePoint, ui.get(weapons[i].prefersafe))
+        ui.set(forceSafePoint, ui.get(weapons[i].forcesafe) and "Always on" or "On hotkey")
+        ui.set(forceSafePointLimbs, ui.get(weapons[i].legsafe))
+
+        local to_set_hc = ui.get(weapons[i].hitchance)
+
+        --No scope hit chance
+        if includes(ui.get(weapons[i].special), "No-scope hit chance") then
+            local weaponidxs = {11,38,9,40}
+            local weapon = entity.get_player_weapon(lp())
+            if weapon ~= nil then
+                local weapon_idx = entity.get_prop(weapon, "m_iItemDefinitionIndex") or 0
+                local scoped = includes(weaponidxs, weapon_idx) and (entity.get_prop(lp(), "m_bIsScoped") or 0) == 1
+
+                local target, distance = getClosestTarget()
+                local range = ui.get(weapons[i].noscopeRange) ~= 101 and ui.get(weapons[i].noscopeRange) or math.huge
+
+                if not scoped and range >= distance then
+                    ui.set(autoScope, false)
+                    to_set_hc = ui.get(weapons[i].noscope)
+                else
+                    ui.set(autoScope, true)
+                end
+            end
+        else
+            ui.set(autoScope, true)
+        end
+
+        --In air
+        if includes(ui.get(weapons[i].special), "In-air hit chance") then
+            local air = bit.band(entity.get_prop(lp(), "m_fFlags") or 0, 1) == 0
+            if air then
+                to_set_hc = ui.get(weapons[i].inair)
+            end
+        end
+
+        --Set HC
+        ui.set(minimumHC, to_set_hc)
+
+        --Double tap hit chance is just the menu item
+        ui.set(doubleTapsHitChance, ui.get(weapons[i].dthitchance))
+
+        local to_set_md = ui.get(weapons[i].mindmg)
+        
+        if includes(ui.get(weapons[i].special), "Visible minimum damage") then
+            --Time to search through all enemies to see if they're visible
+            local enemies = entity.get_players(true)
+            local origin = {client.eye_position()}
+            local predictive_origin = predict(origin, lp(), 1, 35)
+            --Found enemy visible 
+            for e=1, #enemies do
+                if isVisible(origin, enemies[e]) or isVisible(predictive_origin, enemies[e]) then
+                    to_set_md = ui.get(weapons[i].vismindmg) 
+                    break
+                end
+            end
+        end
+
+        --Double tap override
+        if includes(ui.get(weapons[i].special), "DT minimum damage") then
+            local weapon = entity.get_player_weapon(lp())
+            local nextFire = math.max(entity.get_prop(weapon, "m_flNextPrimaryAttack") or 0, entity.get_prop(lp(), "m_flNextAttack") or 0)
+            if shiftTicks < 0 and nextFire < globals.curtime() and globals.chokedcommands() <= ui.get(doubleTapsFL) then
+                to_set_md = ui.get(weapons[i].dtmindmg)
+            end
+        end
+
+        --Hotkey
+        if includes(ui.get(weapons[i].special), "Hotkey minimum damage") then
+            if ui.get(weapons[i].hk) then
+                to_set_md = ui.get(weapons[i].hkmindmg)
+            end
+        end
+
+        --Set md
+        ui.set(minimumMD, to_set_md)
+
+        --Set outstop
+        ui.set(quickStop[1], ui.get(weapons[i].quickstop) and ui.get(weapons[i].quickstopKey))
+        ui.set(quickStop[2], "Always on")
+        ui.set(quickStopOptions, ui.get(weapons[i].quickstopOptions))
+        ui.set(doubleTapsQS, ui.get(weapons[i].quickstop) and ui.get(weapons[i].doubletapStopOptions) or {})
+
+        --Handle prefer body aim
+        ui.set(preferBodyAim[1], ui.get(weapons[i].preferbody))
+
+        --Run disablers
+        ui.set(preferBodyAim[2], ui.get(weapons[i].preferbodyDisablers))
+
+        local shouldFBaim = false
+
+        --Always on
+        if includes(ui.get(weapons[i].forceBody), "Always on") then
+            shouldFBaim = true
+        end
+
+        --Force body aim on peek is already a feature so we just set it here
+        ui.set(forceBodyAimPeek, includes(ui.get(weapons[i].forceBody), "Peek"))
+
+        --Force body aim on first double tap
+        if includes(ui.get(weapons[i].forceBody), "DT") then
+            local weapon = entity.get_player_weapon(lp())
+            local nextFire = math.max(entity.get_prop(weapon, "m_flNextPrimaryAttack") or 0, entity.get_prop(lp(), "m_flNextAttack") or 0)
+            if shiftTicks < 0 and nextFire < globals.curtime() and globals.chokedcommands() <= ui.get(doubleTapsFL) then
+                shouldFBaim = true
+            end
+        end
+
+        --On hotkey
+        if includes(ui.get(weapons[i].forceBody), "Hotkey") then
+            if ui.get(weapons[i].forcebodyhk) then
+                shouldFBaim = true
+            end
+        end
+
+        --Set
+        ui.set(forceBodyAim, shouldFBaim and "Always on" or "On hotkey")
+
+        ui.set(delayShot, ui.get(weapons[i].delayshot) and ui.get(weapons[i].delayshotkey))
+        ui.set(accuracyBoost, ui.get(weapons[i].accboost))
+    end
+end
+
+client.set_event_callback("paint", function()
+    if ui.get(indicators) then
+        --Debug indicators
+        local color_g = {ui.get(color)}
+
+        local md = ui.get(minimumMD)
+        if damageIdx[md] ~= nil then
+            md = damageIdx[md]
+        end
+        renderer.indicator(color_g[1], color_g[2], color_g[3], color_g[4], "Minimum damage: " .. md)
+        renderer.indicator(color_g[1], color_g[2], color_g[3], color_g[4], "Hit chance: " .. ui.get(minimumHC) .. "%")
+    end
+end)
+
+client.set_event_callback("paint_ui", handleVis)
+client.set_event_callback("run_command", handleWeapons)
+client.set_event_callback("net_update_end", netUpdateEnd)
