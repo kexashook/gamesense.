@@ -64,7 +64,7 @@ local weapons = {}
 
 local menuPos = {"LUA", "B"}
 
-local branding = ui.new_label(menuPos[1], menuPos[2], "Matrix adaptive weapon (v1.0)")
+local branding = ui.new_label(menuPos[1], menuPos[2], "Matrix adaptive weapon (v1.1)")
 local currentWeapon = ui.new_combobox(menuPos[1], menuPos[2], "Weapon", weaponNames)
 
 for i=1, #weaponNames do
