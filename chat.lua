@@ -111,6 +111,7 @@ local function send_message(name, text)
         if success then
             client.delay_call(0.1, collect_messages)
         else
+            send_message(name, text)
             client.color_log(255, 255, 100, "Failed to send message, FUCK FUCK")
         end
     end)
@@ -281,6 +282,7 @@ local function paint()
 
             local name = convert_space(messages.name[i])
             local msg = convert_space(messages.message[i])
+            local raw_msg = msg
 
             local name_long = true
             local name_was_2_long = false
@@ -322,8 +324,8 @@ local function paint()
             
             local alpha = clamp(0, 255, 155 + (((i - (#messages.name - 11)))/10)*100)
 
-            if string.match(msg, "@" .. cvar.name:get_string()) or string.match(msg, "@everyone") or string.match(msg, "@here") then
-                renderer.gradient(position[1], position[2] + 16 + offset, size[1], text_size[2] + 4, name_color[1], name_color[2], name_color[3], 150, name_color[1], name_color[2], name_color[3], 50, true)
+            if string.match(raw_msg, "@" .. cvar.name:get_string()) or string.match(raw_msg, "@everyone") then
+                renderer.gradient(position[1], position[2] + 16 + offset, size[1], text_size[2] + 4, name_color[1], name_color[2], name_color[3], 100, name_color[1], name_color[2], name_color[3], 25, true)
             end
 
             local width = multicolor(position[1] + 5, position[2] + offset + 17, {
