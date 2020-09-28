@@ -178,7 +178,7 @@ ui.set_visible(ind_w, false)
 
 local size = {ui.get(ind_w), 187}
 local position = {ui.get(x_pos), ui.get(y_pos)}
-local background_color = {25, 25, 25, 100}
+local background_color = {25, 25, 25, 125}
 
 --Refresh stuff
 local update_rate = 5
@@ -321,6 +321,10 @@ local function paint()
             end 
             
             local alpha = clamp(0, 255, 155 + (((i - (#messages.name - 11)))/10)*100)
+
+            if string.match(msg, "@" .. cvar.name:get_string()) or string.match(msg, "@everyone") or string.match(msg, "@here") then
+                renderer.gradient(position[1], position[2] + 16 + offset, size[1], text_size[2] + 4, name_color[1], name_color[2], name_color[3], 150, name_color[1], name_color[2], name_color[3], 50, true)
+            end
 
             local width = multicolor(position[1] + 5, position[2] + offset + 17, {
                 {"", {255, 255, 255, clamp(0, 255, alpha)}, time},
