@@ -110,6 +110,7 @@ local function send_message(name, text)
     local get = http.get(url, {network_timeout = 200, absolute_timeout = 200}, function(success, response)
         if success then
             client.delay_call(0.1, collect_messages)
+            next_send_time = globals.realtime() + 4
         else
             send_message(name, text)
             client.color_log(255, 255, 100, "Failed to send message, FUCK FUCK")
@@ -117,20 +118,34 @@ local function send_message(name, text)
     end)
 end
 
+local function try_to_send(msg)
+    if next_send_time - 1 < globals.realtime() then
+        msg = string.gsub(msg, [[\]], "/")
+        send_message(cvar.name:get_string(), msg)
+    else
+        client.color_log(255, 255, 100, "Please wait " .. math.floor((next_send_time - 1) - globals.realtime()) .. " seconds until you send another message")
+    end
+end
+
 local msg_to_send = ui.new_textbox("config", "presets", "Message")
 local send = ui.new_button("config", "presets", "Send", function()
-    if next_send_time - 1 < globals.realtime() then
-        next_send_time = globals.realtime() + 4
-        local text = ui.get(msg_to_send)
-        text = string.gsub(text, [[\]], "/")
-        send_message(cvar.name:get_string(), text)
-        ui.set(msg_to_send, "")
-    end
+    try_to_send(ui.get(msg_to_send))
+    ui.set(msg_to_send, "")
 end)
+
+local function console_input(e)
+    local trigger_key = "!"
+    if e:sub(1, trigger_key:len()) == trigger_key then
+        local removal = e:sub(trigger_key:len() + 1, e:len()) 
+        try_to_send(removal)
+    end
+end
+
+client.set_event_callback("console_input", console_input)
 
 local until_sends = {}
 for i=1, 3 do
-    table.insert(until_sends, {i, ui.new_button("config", "presets", "Send (" .. i .. "s cooldown)", function() client.color_log(255, 255, 100, "Please wait " .. i .. " seconds") end)})
+    table.insert(until_sends, {i, ui.new_button("config", "presets", "Send (" .. i .. "s cooldown)", function() end)})
 end
 
 local sound = ui.new_checkbox("config", "presets", "Sound")
@@ -151,6 +166,17 @@ local function mouse_on(x, y, w, h)
     return false
 end
 
+local emojis = {
+    {"smile", renderer.load_png(readfile("matrix_sb//smile.png") or error("Download icons dumbass @ https://anonfiles.com/ZdRfp7a8pe/matrix_icons_zip"), 32, 32)},
+    {"happy", renderer.load_png(readfile("matrix_sb//happy.png") or error("Download icons dumbass @ https://anonfiles.com/ZdRfp7a8pe/matrix_icons_zip"), 32, 32)},
+    {"meh", renderer.load_png(readfile("matrix_sb//meh.png") or error("Download icons dumbass @ https://anonfiles.com/ZdRfp7a8pe/matrix_icons_zip"), 32, 32)},
+    {"angry", renderer.load_png(readfile("matrix_sb//angry.png") or error("Download icons dumbass @ https://anonfiles.com/ZdRfp7a8pe/matrix_icons_zip"), 32, 32)},
+    {"sick", renderer.load_png(readfile("matrix_sb//sick.png") or error("Download icons dumbass @ https://anonfiles.com/ZdRfp7a8pe/matrix_icons_zip"), 32, 32)},
+    {"love", renderer.load_png(readfile("matrix_sb//love.png") or error("Download icons dumbass @ https://anonfiles.com/ZdRfp7a8pe/matrix_icons_zip"), 32, 32)},
+    {"flushed", renderer.load_png(readfile("matrix_sb//flushed.png") or error("Download icons dumbass @ https://anonfiles.com/ZdRfp7a8pe/matrix_icons_zip"), 32, 32)},
+    {"quiet", renderer.load_png(readfile("matrix_sb//quiet.png") or error("Download icons dumbass @ https://anonfiles.com/ZdRfp7a8pe/matrix_icons_zip"), 32, 32)}
+}
+
 --texts = {flags, color(table: r,g,b,a), text}
 local function multicolor(x, y, texts)
     local offset = 0
@@ -159,9 +185,70 @@ local function multicolor(x, y, texts)
         local color = texts[i][2]
         local flag = texts[i][1]
 
-        local text_size = {renderer.measure_text(flag, msg)}
-        renderer.text(x + offset, y, color[1], color[2], color[3], color[4], flag, 0, msg)
-        offset = offset + text_size[1]
+        --{Start, end, emoji_name}
+        local emoji_occurrences = {}
+
+        local it_pos = nil
+        local strings = {}
+        msg:gsub(".",function(c) table.insert(strings,c) end)
+
+        for i2=1, #strings do
+            for i3=1, #emojis do
+                if strings[i2] == ":" and (strings[i2 + emojis[i3][1]:len() + 1] ~= nil and strings[i2 + emojis[i3][1]:len() + 1] == ":") then
+
+                    --Find whats inside the :*****:
+                    local string_table = {}
+
+                    for i4=i2 + 1, i2 + emojis[i3][1]:len() do
+                        table.insert(string_table, strings[i4])
+                    end
+
+                    --Whats inside the :****:
+                    local string_inside = table.concat(string_table)
+
+                    --Check
+                    if string_inside == emojis[i3][1] then
+                        --YAY!!!
+                        table.insert(emoji_occurrences, {i2, i2 + emojis[i3][1]:len() + 1, emojis[i3][2] })
+                    end
+                end
+            end
+        end
+        for i2=1, #strings do
+            local emote = false
+            local mid_emote = false
+            local start, end_, texture_id = nil, nil, nil
+
+            for i3=1, #emoji_occurrences do
+                local emoji_occurrence = emoji_occurrences[i3]
+                if emoji_occurrence[1] == i2 then
+                    emote = true
+                    start, end_, texture_id = unpack(emoji_occurrence)
+                end
+
+                if emoji_occurrence[2] >= i2 and emoji_occurrence[1] < i2 then
+                    mid_emote = true
+                end
+            end
+
+            --print(strings[i2], " | E:", emote, " | S:", i2, " | End: ", end_, " | MD:", mid_emote)
+
+            if mid_emote ~= true then
+                local text_size = emote and {15, 15} or {renderer.measure_text(flag, strings[i2])}
+                if emote then
+                    renderer.texture(texture_id, x + offset - 1, y - 1, 16, 16, 255, 255, 255, 255, "f")
+                else
+                    renderer.text(x + offset, y, color[1], color[2], color[3], color[4], flag, 0, strings[i2])
+                end
+                offset = offset + text_size[1]
+            end
+        end
+
+        --local text_size = {renderer.measure_text(flag, msg)}
+        --renderer.text(x + offset, y, color[1], color[2], color[3], color[4], flag, 0, msg)
+
+
+        --offset = offset + text_size[1]
     end
     return offset
 end
@@ -268,7 +355,7 @@ local function paint()
         local name_color = {ui.get(color)}
 
         --Cope..
-        for i=#messages.name, clamp(1, #messages.name, #messages.name - 10), - 1 do
+        for i=#messages.name, clamp(1, #messages.name, #messages.name - 10 ), - 1 do
             local time = messages.time[i]
 
             time = string.sub(time, 12, time:len() - 3)
