@@ -1,3 +1,4 @@
+--I wanna die 
 local targetSelection = ui.reference("RAGE", "Aimbot", "Target selection")
 local targetHitbox = ui.reference("RAGE", "Aimbot", "Target hitbox")
 local multiPoint = {ui.reference("RAGE", "Aimbot", "Multi-point")}
@@ -64,7 +65,7 @@ local weapons = {}
 
 local menuPos = {"LUA", "B"}
 
-local branding = ui.new_label(menuPos[1], menuPos[2], "Matrix adaptive weapon (v1.1)")
+local branding = ui.new_label(menuPos[1], menuPos[2], "Matrix adaptive weapon (ver. 1.2)")
 local currentWeapon = ui.new_combobox(menuPos[1], menuPos[2], "Weapon", weaponNames)
 
 for i=1, #weaponNames do
@@ -83,13 +84,14 @@ for i=1, #weaponNames do
         hitchance = ui.new_slider(menuPos[1], menuPos[2], "Hit chance \n" .. name, 0, 100, 75, true, "%"),
         dthitchance = ui.new_slider(menuPos[1], menuPos[2], "DT Hit chance \n" .. name, 0, 100, 60, true, "%"),
         mindmg = ui.new_slider(menuPos[1], menuPos[2], "Minimum damage \n" .. name, 0, 126, 35, true, "", 1, damageIdx),
-        special = ui.new_multiselect(menuPos[1], menuPos[2], "Extras \n" .. name, {"No-scope hit chance", "In-air hit chance", "Visible minimum damage", "DT minimum damage", "Hotkey minimum damage"}),
+        special = ui.new_multiselect(menuPos[1], menuPos[2], "Extras \n" .. name, {"No-scope hit chance", "In-air hit chance", "Visible minimum damage", "DT minimum damage", "Hotkey minimum damage", "HP + 1 Threshold"}),
         noscope = ui.new_slider(menuPos[1], menuPos[2], "No-scope hit chance \n" .. name, 0, 100, 50, true, "%"),
         noscopeRange = ui.new_slider(menuPos[1], menuPos[2], "Max no-scope distance", 10, 101, 75, true, "ft", 1, {[101] = "Unlimited"}),
         inair = ui.new_slider(menuPos[1], menuPos[2], "In-air hit chance \n" .. name, 0, 100, 25, true, "%"),
         vismindmg = ui.new_slider(menuPos[1], menuPos[2], "Visible minimum damage \n" .. name, 0, 126, 25, true, "", 1, damageIdx),
         dtmindmg = ui.new_slider(menuPos[1], menuPos[2], "DT minimum damage \n" .. name, 0, 126, 45, true, "", 1, damageIdx),
         hkmindmg = ui.new_slider(menuPos[1], menuPos[2], "Hotkey minimum damage \n" .. name, 0, 126, 10, true, "", 1, damageIdx),
+        minhp = ui.new_slider(menuPos[1], menuPos[2], "Health threshold \n" .. name, 0, 100, 50, true),
         hk = ui.new_hotkey(menuPos[1], menuPos[2], "Hotkey \n minimum damage " .. name, true),
         quickstop = ui.new_checkbox(menuPos[1], menuPos[2], "Quick stop \n" .. name),
         quickstopKey = ui.new_hotkey(menuPos[1], menuPos[2], "Quick stop key \n" .. name, true),
@@ -106,7 +108,7 @@ for i=1, #weaponNames do
 end
 
 local indicators = ui.new_checkbox(menuPos[1], menuPos[2], "Debug indicators")
-local color = ui.new_color_picker(menuPos[1], menuPos[2], "Indicators color", 255, 75, 75, 255)
+local color = ui.new_color_picker(menuPos[1], menuPos[2], "Indicators color", 75, 75, 255, 255)
 
 local function handleVis()
     for i=1, #weapons do
@@ -138,6 +140,7 @@ local function handleVis()
         ui.set_visible(weapons[i].dtmindmg, actualState and includes(ui.get(weapons[i].special), "DT minimum damage"))
         ui.set_visible(weapons[i].hk, actualState and includes(ui.get(weapons[i].special), "Hotkey minimum damage"))
         ui.set_visible(weapons[i].hkmindmg, actualState and includes(ui.get(weapons[i].special), "Hotkey minimum damage"))
+        ui.set_visible(weapons[i].minhp, actualState and includes(ui.get(weapons[i].special), "HP + 1 Threshold"))
         ui.set_visible(weapons[i].quickstop, actualState)
         ui.set_visible(weapons[i].quickstopKey, actualState and ui.get(weapons[i].quickstop))
         ui.set_visible(weapons[i].quickstopOptions, actualState and ui.get(weapons[i].quickstop))
@@ -232,6 +235,52 @@ local function getClosestTarget()
     else
         return nil, 0
     end
+end
+
+local best_target = 1
+
+local function vec3_angles(source, destination)
+    local vec3_delta = {
+        source[1] - destination[1],
+        source[2] - destination[2],
+        source[3] - destination[3],
+    }
+
+    local distances = math.sqrt(vec3_delta[1] * vec3_delta[1] + vec3_delta[2] * vec3_delta[2])
+
+    local angle_pitch = math.atan(vec3_delta[2]/distances) * (180/math.pi)
+    local angle_yaw = math.atan(vec3_delta[2]/vec3_delta[1]) * (180/math.pi)
+
+    if vec3_delta[1] > 0 then
+        angle_yaw = angle_yaw + 180
+    end
+
+    return {angle_pitch, angle_yaw}
+end
+
+local function target_selection()
+    local view_angles = {client.camera_angles()}
+    local camera_position = {client.camera_position()}
+
+    local closest_target = 0
+    local closest_distance = math.huge
+
+    for i=1, 64 do
+        local index = i
+        if entity.is_enemy(index) and index ~= lp() then
+            local origin = {entity.hitbox_position(index, 2)}
+            local angle = vec3_angles(camera_position, origin)
+
+            local delta = view_angles[2] - angle[2]
+            local distance = math.sqrt(delta * delta)
+
+            if distance < closest_distance then
+                closest_target = index
+                closest_distance = distance
+            end
+        end
+    end 
+    best_target = closest_target
 end
 
 local oldSimTime = 0
@@ -390,6 +439,13 @@ local function handleWeapons()
             end
         end
 
+        if includes(ui.get(weapons[i].special), "HP + 1 Threshold") then
+            local health = entity.get_prop(best_target, "m_iHealth")
+            if health <= ui.get(weapons[i].minhp) then
+                to_set_md = 101
+            end
+        end
+
         --Hotkey
         if includes(ui.get(weapons[i].special), "Hotkey minimum damage") then
             if ui.get(weapons[i].hk) then
@@ -447,6 +503,8 @@ local function handleWeapons()
 end
 
 client.set_event_callback("paint", function()
+    target_selection()
+
     if ui.get(indicators) then
         --Debug indicators
         local color_g = {ui.get(color)}
