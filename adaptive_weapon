@@ -450,7 +450,6 @@ local function handleWeapons()
 
         if includes(ui.get(weapons[i].special), "HP + 1 Threshold") then
             local health = entity.get_prop(best_target, "m_iHealth")
-            print(entity.get_player_name(best_target))
             if health <= ui.get(weapons[i].minhp) then
                 to_set_md = 101
             end
