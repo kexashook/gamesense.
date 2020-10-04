@@ -239,6 +239,16 @@ end
 
 local best_target = 1
 
+local function calculate_angle(x, y, ex, ey)
+    local delta = {x - ex, y - ey}
+    local yaw = math.atan(delta[2] / delta[1])
+    yaw = normalize_yaw(yaw * 180 / math.pi)
+    if delta[1] >= 0 then
+        yaw = normalize_yaw(yaw + 180)
+    end
+    return yaw
+end
+
 local function vec3_angles(source, destination)
     local vec3_delta = {
         source[1] - destination[1],
@@ -260,23 +270,22 @@ end
 
 local function target_selection()
     local view_angles = {client.camera_angles()}
-    local camera_position = {client.camera_position()}
+    local camera_position = {client.eye_position()}
 
     local closest_target = 0
     local closest_distance = math.huge
 
     for i=1, 64 do
         local index = i
-        if entity.is_enemy(index) and index ~= lp() then
+        if entity.is_enemy(index) and entity.is_alive(index) and index ~= lp() then
             local origin = {entity.hitbox_position(index, 2)}
-            local angle = vec3_angles(camera_position, origin)
+            local angle = calculate_angle(camera_position[1], camera_position[2], origin[1], origin[2])
 
-            local delta = view_angles[2] - angle[2]
-            local distance = math.sqrt(delta * delta)
+            local delta = view_angles[2] - angle
 
-            if distance < closest_distance then
+            if math.abs(delta) < closest_distance then
                 closest_target = index
-                closest_distance = distance
+                closest_distance = math.abs(delta)
             end
         end
     end 
@@ -441,6 +450,7 @@ local function handleWeapons()
 
         if includes(ui.get(weapons[i].special), "HP + 1 Threshold") then
             local health = entity.get_prop(best_target, "m_iHealth")
+            print(entity.get_player_name(best_target))
             if health <= ui.get(weapons[i].minhp) then
                 to_set_md = 101
             end
