@@ -220,6 +220,7 @@ local paint_ui = function()
             fig.hit_chance,
             fig.damage,
             fig.accuracy_boost,
+            fig.avoidunsafe,
             fig.delay_shot,
             fig.quick_stop,
             fig.quick_stop_options,
