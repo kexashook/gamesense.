@@ -5,7 +5,7 @@ local menu = {
     multi_pointscale = ui.reference("RAGE", "Aimbot", "Multi-point scale"),
     prefer_safe_points = ui.reference("RAGE", "Aimbot", "Prefer safe point"),
     force_safe_point = ui.reference("RAGE", "Aimbot", "Force safe point"),
-    force_safe_point_limbs = ui.reference("RAGE", "Aimbot", "Force safe point on limbs"),
+    avoidunsafe = ui.reference("RAGE", "Aimbot", "Avoid unsafe hitboxes"),
     automatic_fire = ui.reference("RAGE", "Aimbot", "Automatic fire"),
     automatic_penetration = ui.reference("RAGE", "Aimbot", "Automatic penetration"),
     slient_aim = ui.reference("RAGE", "Aimbot", "Silent aim"),
@@ -37,6 +37,9 @@ local menu = {
     on_shot_antiaim = {ui.reference("AA", "Other", "On shot anti-aim")},
     low_fps_mitigations = ui.reference("RAGE", "Aimbot", "Low FPS mitigations")
 }       
+
+local screen = {client.screen_size()}
+local center = {screen[1]/2, screen[2]/2} 
 
 --ye
 local lp = entity.get_local_player
@@ -91,6 +94,7 @@ for i=1, #weapon_groups do
         multi_point_hitbox = ui.new_multiselect("RAGE", "Aimbot", "Multi-point hitbox \n" .. name, {"Head", "Chest", "Stomach", "Arms", "Legs", "Feet"}),
         multi_point_scale = ui.new_slider("RAGE", "Aimbot", "Multi-point scale \n" .. name, 24, 100, 70),
         prefer_safe_point = ui.new_checkbox("RAGE", "Aimbot", "Prefer safe point \n" .. name),
+        avoidunsafe = ui.new_multiselect("RAGE", "Aimbot", "Avoid unsafe hitboxes \n" .. name, {"Head", "Chest", "Stomach", "Arms", "Legs"}),
         hit_chance = ui.new_slider("RAGE", "Aimbot", "Minimum hit chance \n" .. name, 0, 100, 50, true, "%"),
         damage = ui.new_slider("RAGE", "Aimbot", "Minimum damage \n" .. name, 0, 126, 25, true),
         accuracy_boost = ui.new_combobox("RAGE", "Other", "Accuracy boost \n" .. name, {"Off", "Low", "Medium", "High", "Maximum"}),
@@ -128,7 +132,7 @@ for i=1, #config do
     local weapon_group = weapon_groups[i]
     local name = weapon_group.name
     label[i] = {
-        acitve_fig = ui.new_label("RAGE", "Other", "Currnet config: " .. name),
+        acitve_fig = ui.new_label("RAGE", "Other", "Current config: " .. name),
     }
 end
 
@@ -191,6 +195,8 @@ local paint_ui = function()
         ui.set(active_config, current_config)
         last_weapon = current_config
     end 
+
+    local active_indicators = {}
 
     for i=1, #config do
         local fig = config[i]
@@ -279,6 +285,7 @@ local paint_ui = function()
                     ui.set(menu.minimum_damage, ui.get(fig.damage))
                     ui.set(menu.accuracy_boost, ui.get(fig.accuracy_boost))
                     ui.set(menu.delay_shot, ui.get(fig.delay_shot))
+                    ui.set(menu.avoidunsafe, ui.get(fig.avoidunsafe))
                     ui.set(menu.quick_stop[1], ui.get(fig.quick_stop))
                     ui.set(menu.quick_stop_options, ui.get(fig.quick_stop_options))
                     ui.set(menu.prefer_body_aim, ui.get(fig.prefer_body_aim))
@@ -310,6 +317,19 @@ local paint_ui = function()
                     elseif config[i].md_restored then
                         ui.set(fig.damage, ui.get(menu.minimum_damage))
                     end
+
+                    if md_ovr then
+                        table.insert(active_indicators, "Min damage: " .. ui.get(fig.override_damage))
+                    end
+
+                    if ns_ovr then
+                        table.insert(active_indicators, "Noscope hitchance")
+                    end
+
+                    if hb_ovr then
+                        table.insert(active_indicators, "Hitbox override")
+                    end
+                    ui.set(fig.avoidunsafe, ui.get(menu.avoidunsafe))
                     ui.set(fig.accuracy_boost, ui.get(menu.accuracy_boost))
                     ui.set(fig.delay_shot, ui.get(menu.delay_shot))
                     ui.set(fig.quick_stop, ui.get(menu.quick_stop[1]))
@@ -323,6 +343,13 @@ local paint_ui = function()
                 end
             end
         end
+
+        local offset = 50
+
+        for i=1, #active_indicators do
+            renderer.text(center[1], center[2] + offset, 220, 220, 220, 175, "", 0, active_indicators[i])
+            offset = offset + 14
+        end 
     end 
 end
 
