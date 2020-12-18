@@ -1,3 +1,12 @@
+local function depends()
+    local csgo_weapons = require("gamesense/csgo_weapons")
+end
+if pcall(depends) == false then
+    return error("[Matrix adaptive weapon] Lua requires gamesense/csgo_weapons")
+end
+
+local csgo_weapons = require("gamesense/csgo_weapons")
+
 local menu = {
     target_selection = ui.reference("RAGE", "Aimbot", "Target selection"),
     target_hitbox = ui.reference("RAGE", "Aimbot", "Target hitbox"),
@@ -107,7 +116,7 @@ for i=1, #weapon_groups do
         double_tap = ui.new_checkbox("RAGE", "Other", "Double tap \n" .. name),
         double_tap_hit_chance = ui.new_slider("RAGE", "Aimbot", "double tap hit chance \n" .. name, 0, 100, 50, true, "%"),
         double_tap_quick_stop = ui.new_multiselect("RAGE", "Aimbot", "double tap quick stop \n" .. name, {"Slow motion", "Duck", "Move between shots"}),
-        extra = ui.new_multiselect("RAGE", "Aimbot", "Extra options: " .. name, {"Noscope minimum hit chance", "Override minimum damage", "Override hitboxes"}),
+        extra = ui.new_multiselect("RAGE", "Aimbot", "Extra options: " .. name, {"Noscope minimum hit chance", "Override minimum damage", "Override hitboxes", "Force body aim on lethal", "Force safepoint on lethal"}),
         noscope_hit_chance = ui.new_slider("RAGE", "Aimbot", "Noscope hit chance: " .. name, 0, 100, 40, true, "%"),
         override_damage = ui.new_slider("RAGE", "Aimbot", "Override minimum damage: " .. name, 0, 126, 40, true, ""),
         override_key = ui.new_hotkey("RAGE", "Aimbot", "Override key: " .. name, true),
@@ -136,6 +145,10 @@ for i=1, #config do
     }
 end
 
+local distance2d = function(point, point2)
+    local delta = {point[1] - point2[1], point[2] - point2[2]}
+    return math.sqrt((delta[1] * delta[1]) + (delta[2] * delta[2]))
+end
 
 local includes = function(table, key)
     for i=1, #table do
@@ -161,6 +174,43 @@ local is_noscoping = function(config)
         end
     end
     return false
+end
+
+--Pasted from smol (idc to make my own LOL) 
+--Damn this code is smelly
+local is_lethal = function(player)
+    if lp() == nil or not entity.is_alive(lp()) then 
+        return false
+    end
+
+    local local_origin = {entity.get_origin(lp())}
+    local enemy_origin = {entity.get_origin(player)}
+    local distance = distance2d(local_origin, enemy_origin)
+
+    local enemy_health = entity.get_prop(player, "m_iHealth")
+
+	local weapon_ent = entity.get_player_weapon(lp())
+    if weapon_ent == nil then 
+        return false
+    end
+	
+	local weapon_idx = entity.get_prop(weapon_ent, "m_iItemDefinitionIndex")
+    if weapon_idx == nil then 
+        return false
+    end
+	
+	local weapon = csgo_weapons[weapon_idx]
+    if weapon == nil then 
+        return false
+    end
+
+	local dmg_after_range = (weapon.damage * math.pow(weapon.range_modifier, (distance * 0.002))) * 1.25
+	local armor = entity.get_prop(player,"m_ArmorValue")
+	local newdmg = dmg_after_range * (weapon.armor_ratio * 0.5)
+	if dmg_after_range - (dmg_after_range * (weapon.armor_ratio * 0.5)) * 0.5 > armor then
+		newdmg = dmg_after_range - (armor / 0.5)
+	end
+	return newdmg >= enemy_health
 end
 
 local paint_ui = function()
@@ -198,11 +248,12 @@ local paint_ui = function()
 
     local active_indicators = {}
 
+    local enemies = entity.get_players(true)
+
     for i=1, #config do
         local fig = config[i]
 
         set_vis(master_g and fig.name == active_config_g, fig.enable)
-
         set_vis(master_g and fig.name == current_config, fig.extra, label[i].acitve_fig)
 
         local extra_g = ui.get(fig.extra)
@@ -341,6 +392,15 @@ local paint_ui = function()
                     ui.set(fig.double_tap, ui.get(menu.double_tap[1]))
                     ui.set(fig.double_tap_hit_chance, ui.get(menu.double_tap_hit_chance))
                     ui.set(fig.double_tap_quick_stop, ui.get(menu.double_tap_quick_stop))
+                end
+
+                client.update_player_list()
+
+                for i=1, #enemies do 
+                    local enemy = enemies[i]
+                    local lethal = is_lethal(enemy)
+                    plist.set(enemy, "Override prefer body aim", (lethal and includes(extra_g, "Force body aim on lethal")) and "Force" or "-" )
+                    plist.set(enemy, "Override safe point", (lethal and includes(extra_g, "Force safepoint on lethal")) and "On" or "-" )
                 end
             end
         end
