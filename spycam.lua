@@ -180,8 +180,8 @@ local override_view = function(view) --Set view angles
         end
 
         --Yee
-        local rotate_origin = extrapolate_angle(closest_to_crosshair, target_eye_position, {view_angles[1], normalize_yaw(yaw + 180 + target_view_add)}, ui.get(view_distance))
-        local view_origin = {rotate_origin[1], rotate_origin[2], target_eye_position[3]}
+        local rotate_origin = extrapolate_angle(closest_to_crosshair, target_eye_position, {-view_angles[1], normalize_yaw(yaw + 180 + target_view_add)}, ui.get(view_distance))
+        local view_origin = {rotate_origin[1], rotate_origin[2], rotate_origin[3]}
 
         --smooth origin
         local transition_origin = lerp(local_eye_position, view_origin, transition_percent)
