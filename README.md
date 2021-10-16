@@ -1,5 +1,1 @@
 # public-gamesense
-
-# Hullo
-
-poggers
